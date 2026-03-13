@@ -1,4 +1,4 @@
-# SessionHPH — Honor Per Hour Tracker
+# HPH — Honor Per Hour Tracker
 
 A lightweight, single-file WoW addon (Turtle WoW / 1.12) that tracks your PvP honor earnings in real time.
 
@@ -24,5 +24,5 @@ A small draggable frame shows five stats, updated every second:
 ## Notes
 
 - No libraries required — single `.lua` file.
-- Frame position is saved per character (`SessionHPH_db`).
+- Frame position is saved per character (`HPH_db`).
 - Honor is detected from combat log and system messages, including French client messages.
