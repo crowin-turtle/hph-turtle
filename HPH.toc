@@ -2,6 +2,6 @@
 ## Title: Hph
 ## Notes: Honor Per Hour - Session Tracker
 ## Version: 1.0
-## SavedVariablesPerCharacter: SessionHPH_db
+## SavedVariablesPerCharacter: HPH_db
 
 HPH.lua
