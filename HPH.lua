@@ -1,4 +1,4 @@
--- SessionHPH: Honor Per Hour - Session Tracker
+-- HPH: Honor Per Hour - Session Tracker
 -- Single-file addon, no libraries.
 
 local sessionHonor = 0
@@ -7,8 +7,8 @@ local honorLog     = {}   -- {t=timestamp, amount=n} for past-hour window
 local lastUpdate   = 0
 local lastTick     = 0
 
-if not SessionHPH_db then
-	SessionHPH_db = {}
+if not HPH_db then
+	HPH_db = {}
 end
 
 -- Lua 5.0: no string.match, use string.find captures
@@ -44,7 +44,7 @@ local function addHonor(honor)
 end
 
 -- Event frame
-local EventFrame = CreateFrame("Frame", "SessionHPHEvents", UIParent)
+local EventFrame = CreateFrame("Frame", "HPHEvents", UIParent)
 EventFrame:RegisterEvent("PLAYER_LOGIN")
 EventFrame:RegisterEvent("CHAT_MSG_COMBAT_HONOR_GAIN")
 EventFrame:RegisterEvent("CHAT_MSG_SYSTEM")
@@ -58,9 +58,9 @@ EventFrame:SetScript("OnEvent", function(msg)
 		sessionHonor = 0
 		honorLog     = {}
 
-		if SessionHPH_db and SessionHPH_db.x and SessionHPH_db.y then
-			SessionHPHFrame:ClearAllPoints()
-			SessionHPHFrame:SetPoint("CENTER", UIParent, "CENTER", SessionHPH_db.x, SessionHPH_db.y)
+		if HPH_db and HPH_db.x and HPH_db.y then
+			HPHFrame:ClearAllPoints()
+			HPHFrame:SetPoint("CENTER", UIParent, "CENTER", HPH_db.x, HPH_db.y)
 		end
 		return
 	end
@@ -81,7 +81,7 @@ EventFrame:SetScript("OnEvent", function(msg)
 end)
 
 -- Main display frame
-local Frame = CreateFrame("Frame", "SessionHPHFrame", UIParent)
+local Frame = CreateFrame("Frame", "HPHFrame", UIParent)
 Frame:SetMovable(true)
 Frame:EnableMouse(true)
 Frame:RegisterForDrag("LeftButton")
@@ -107,8 +107,8 @@ Frame:SetScript("OnDragStop", function()
 	Frame:StopMovingOrSizing()
 	local _, _, _, x, y = Frame:GetPoint(1)
 	if not SessionHPH_db then SessionHPH_db = {} end
-	SessionHPH_db.x = x
-	SessionHPH_db.y = y
+	HPH_db.x = x
+	HPH_db.y = y
 end)
 
 -- 6 lines, 15px apart, centered in the frame
@@ -199,21 +199,21 @@ Frame:SetScript("OnUpdate", function(elapsed)
 end)
 
 -- /hph toggle | /hph reset
-SLASH_SESSIONHPH1 = "/hph"
-SlashCmdList["SESSIONHPH"] = function(msg)
+SLASH_HPH1 = "/hph"
+SlashCmdList["HPH"] = function(msg)
 	local arg = msg and string.gsub(msg, "^%s+", "") or ""
 	if string.lower(arg) == "reset" then
 		Frame:ClearAllPoints()
 		Frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-		if not SessionHPH_db then SessionHPH_db = {} end
-		SessionHPH_db.x = 0
-		SessionHPH_db.y = 0
+	if not HPH_db then HPH_db = {} end
+	HPH_db.x = 0
+	HPH_db.y = 0
 		Frame:Show()
 	else
-		if SessionHPHFrame:IsShown() then
-			SessionHPHFrame:Hide()
+		if HPHFrame:IsShown() then
+			HPHFrame:Hide()
 		else
-			SessionHPHFrame:Show()
+			HPHFrame:Show()
 		end
 	end
 end
