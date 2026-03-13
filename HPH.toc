@@ -1,0 +1,7 @@
+## Interface: 11508
+## Title: Hph
+## Notes: Honor Per Hour - Session Tracker
+## Version: 1.0
+## SavedVariablesPerCharacter: SessionHPH_db
+
+HPH.lua
