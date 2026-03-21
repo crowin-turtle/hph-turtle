@@ -9,10 +9,14 @@ A small draggable frame shows five stats, updated every second:
 | Line | Color | Stat |
 |------|-------|------|
 | Week | Light blue | Honor earned this week (via game API) |
+| Current Rank | Light green | Current rank and progress percent, derived from RP |
 | Last hour | Orange | Honor earned in the rolling past 60 minutes |
 | Session | White | Honor earned since login |
 | Honor/h | Yellow | Current session rate (honor per hour) |
 | Time | Gray | Session duration |
+
+<img width="339" height="234" alt="image" src="https://github.com/user-attachments/assets/765ccf45-2ed5-46f8-ab1a-d065cf2fbfb7" />
+
 
 ## Commands
 
