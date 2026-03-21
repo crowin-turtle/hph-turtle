@@ -10,6 +10,10 @@ local lastTick     = 0
 if not HPH_db then
 	HPH_db = {}
 end
+if not HPH_db.point then HPH_db.point = "CENTER" end
+if not HPH_db.x then HPH_db.x = 0 end
+if not HPH_db.y then HPH_db.y = 0 end
+if HPH_db.locked == nil then HPH_db.locked = false end
 
 -- Lua 5.0: no string.match, use string.find captures
 local function matchOne(s, pat)
@@ -58,10 +62,11 @@ EventFrame:SetScript("OnEvent", function(msg)
 		sessionHonor = 0
 		honorLog     = {}
 
-		if HPH_db and HPH_db.x and HPH_db.y then
+		if HPH_db and HPH_db.point and HPH_db.x and HPH_db.y then
 			HPHFrame:ClearAllPoints()
-			HPHFrame:SetPoint("CENTER", UIParent, "CENTER", HPH_db.x, HPH_db.y)
+			HPHFrame:SetPoint(HPH_db.point, UIParent, HPH_db.point, HPH_db.x, HPH_db.y)
 		end
+		HPHFrame:Show()
 		return
 	end
 
@@ -85,11 +90,10 @@ local Frame = CreateFrame("Frame", "HPHFrame", UIParent)
 Frame:SetMovable(true)
 Frame:EnableMouse(true)
 Frame:RegisterForDrag("LeftButton")
-Frame:SetWidth(165)
-Frame:SetHeight(118)
+Frame:SetWidth(185)
+Frame:SetHeight(133)
 Frame:SetAlpha(0.9)
 Frame:SetPoint("CENTER", 0, 0)
-Frame:SetUserPlaced(true)
 
 Frame:SetBackdrop({
 	bgFile   = "Interface\\Tooltips\\UI-Tooltip-Background",
@@ -102,17 +106,22 @@ Frame:SetBackdrop({
 Frame:SetBackdropColor(0, 0, 0, 0.6)
 Frame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
 
-Frame:SetScript("OnDragStart", function() Frame:StartMoving() end)
+Frame:SetScript("OnDragStart", function()
+	if not HPH_db.locked then
+		Frame:StartMoving()
+	end
+end)
 Frame:SetScript("OnDragStop", function()
 	Frame:StopMovingOrSizing()
-	local _, _, _, x, y = Frame:GetPoint(1)
-	if not SessionHPH_db then SessionHPH_db = {} end
+	local point, _, _, x, y = Frame:GetPoint(1)
+	if not HPH_db then HPH_db = {} end
+	HPH_db.point = point or "CENTER"
 	HPH_db.x = x
 	HPH_db.y = y
 end)
 
 -- 6 lines, 15px apart, centered in the frame
--- Positions from frame center: +37, +22, +7, -8, -23
+-- Positions from frame center: +37, +22, +7, -8, -23, -38
 
 -- Line 1: Week (light blue)
 Frame.line1 = Frame:CreateFontString(nil, "ARTWORK")
@@ -121,33 +130,40 @@ Frame.line1:SetPoint("CENTER", Frame, "CENTER", 0, 37)
 Frame.line1:SetJustifyH("CENTER")
 Frame.line1:SetTextColor(0.4, 0.8, 1, 1)
 
--- Line 2: Past hour (orange)
+-- Line 2: Current RP (light green)
 Frame.line2 = Frame:CreateFontString(nil, "ARTWORK")
 Frame.line2:SetFont("Fonts\\ARIALN.ttf", 12, "OUTLINE")
 Frame.line2:SetPoint("CENTER", Frame, "CENTER", 0, 22)
 Frame.line2:SetJustifyH("CENTER")
-Frame.line2:SetTextColor(1, 0.6, 0.2, 1)
+Frame.line2:SetTextColor(0.5, 1, 0.5, 1)
 
--- Line 3: Session honor (white)
+-- Line 3: Past hour (orange)
 Frame.line3 = Frame:CreateFontString(nil, "ARTWORK")
 Frame.line3:SetFont("Fonts\\ARIALN.ttf", 12, "OUTLINE")
 Frame.line3:SetPoint("CENTER", Frame, "CENTER", 0, 7)
 Frame.line3:SetJustifyH("CENTER")
-Frame.line3:SetTextColor(1, 1, 1, 1)
+Frame.line3:SetTextColor(1, 0.6, 0.2, 1)
 
--- Line 4: Honor/h (yellow, slightly larger)
+-- Line 4: Session honor (white)
 Frame.line4 = Frame:CreateFontString(nil, "ARTWORK")
-Frame.line4:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
+Frame.line4:SetFont("Fonts\\ARIALN.ttf", 12, "OUTLINE")
 Frame.line4:SetPoint("CENTER", Frame, "CENTER", 0, -8)
 Frame.line4:SetJustifyH("CENTER")
-Frame.line4:SetTextColor(1, 0.98, 0, 1)
+Frame.line4:SetTextColor(1, 1, 1, 1)
 
--- Line 5: Session time (gray)
+-- Line 5: Honor/h (yellow, slightly larger)
 Frame.line5 = Frame:CreateFontString(nil, "ARTWORK")
-Frame.line5:SetFont("Fonts\\ARIALN.ttf", 11, "OUTLINE")
+Frame.line5:SetFont("Fonts\\ARIALN.ttf", 13, "OUTLINE")
 Frame.line5:SetPoint("CENTER", Frame, "CENTER", 0, -23)
 Frame.line5:SetJustifyH("CENTER")
-Frame.line5:SetTextColor(0.7, 0.7, 0.7, 1)
+Frame.line5:SetTextColor(1, 0.98, 0, 1)
+
+-- Line 6: Session time (gray)
+Frame.line6 = Frame:CreateFontString(nil, "ARTWORK")
+Frame.line6:SetFont("Fonts\\ARIALN.ttf", 11, "OUTLINE")
+Frame.line6:SetPoint("CENTER", Frame, "CENTER", 0, -38)
+Frame.line6:SetJustifyH("CENTER")
+Frame.line6:SetTextColor(0.7, 0.7, 0.7, 1)
 
 -- Throttled OnUpdate (1s)
 Frame:SetScript("OnUpdate", function(elapsed)
@@ -172,12 +188,24 @@ Frame:SetScript("OnUpdate", function(elapsed)
 	local mins   = totalM - hours * 60
 	local timeStr = hours .. "h " .. mins .. "m"
 
-	-- Week from game API (hk, hp) — we use hp only
+	-- Weekly honor from game API
 	local weeklyHonor = 0
 	if GetPVPThisWeekStats then
 		local _, hp = GetPVPThisWeekStats()
 		weeklyHonor = tonumber(hp) or 0
 	end
+
+	-- Current RP (macro formula)
+	local currentRp = 0
+	if GetPVPRankProgress and UnitPVPRank then
+		local progress = GetPVPRankProgress("player") or 0
+		local rank     = UnitPVPRank("player") or 0
+		local P = math.floor(progress * 10000) / 100        -- 0–100 %
+		currentRp = math.floor((rank - 6) * 5000 + 5000 * P / 100)
+	end
+	-- Rank and progress % derived from RP: 40000=R10, 45000=R11, …, 60000=R14
+	local currentRank = math.floor(currentRp / 5000) + 2
+	local rankPct = math.floor(math.mod(currentRp, 5000) / 5000 * 100)
 
 	-- Past hour: prune log and sum
 	local cutoff     = now - 3600
@@ -192,23 +220,33 @@ Frame:SetScript("OnUpdate", function(elapsed)
 	honorLog = newLog
 
 	Frame.line1:SetText("Week: "       .. formatHonor(weeklyHonor))
-	Frame.line2:SetText("Last hour: "  .. formatHonor(pastHour))
-	Frame.line3:SetText("Session: "    .. formatHonor(sessionHonor))
-	Frame.line4:SetText("Honor/h: "    .. formatHonor(hph))
-	Frame.line5:SetText(timeStr)
+	Frame.line2:SetText("Current Rank: " .. currentRank .. " (" .. rankPct .. "%)")
+	Frame.line3:SetText("Last hour: "  .. formatHonor(pastHour))
+	Frame.line4:SetText("Session: "    .. formatHonor(sessionHonor))
+	Frame.line5:SetText("Honor/h: "    .. formatHonor(hph))
+	Frame.line6:SetText(timeStr)
 end)
 
--- /hph toggle | /hph reset
+-- /hph toggle | /hph reset | /hph lock | /hph unlock
 SLASH_HPH1 = "/hph"
 SlashCmdList["HPH"] = function(msg)
 	local arg = msg and string.gsub(msg, "^%s+", "") or ""
-	if string.lower(arg) == "reset" then
+	arg = string.lower(arg)
+
+	if arg == "reset" then
 		Frame:ClearAllPoints()
 		Frame:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-	if not HPH_db then HPH_db = {} end
-	HPH_db.x = 0
-	HPH_db.y = 0
+		if not HPH_db then HPH_db = {} end
+		HPH_db.point = "CENTER"
+		HPH_db.x = 0
+		HPH_db.y = 0
 		Frame:Show()
+	elseif arg == "lock" then
+		HPH_db.locked = true
+		DEFAULT_CHAT_FRAME:AddMessage("HPH: frame locked.")
+	elseif arg == "unlock" then
+		HPH_db.locked = false
+		DEFAULT_CHAT_FRAME:AddMessage("HPH: frame unlocked.")
 	else
 		if HPHFrame:IsShown() then
 			HPHFrame:Hide()
